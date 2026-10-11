@@ -5,7 +5,12 @@ Covers:
 - Round-trip serialization via to_line
 - Default empty alternatives/additional_info lists
 - Validation failure for an invalid enum value
+- Accepting an already-constructed date for pris_dato (not just ÅÅÅÅMMDD
+  text), for reconstruction from a source other than raw NELFO text
 """
+
+from datetime import date
+from decimal import Decimal
 
 import pytest
 from pydantic import ValidationError
@@ -65,3 +70,24 @@ def test_product_line_invalid_status_raises():
     bad_line = VL_SAMPLE.replace(";3;010201;R00", ";99;010201;R00", 1)
     with pytest.raises(ValidationError):
         ProductLineRecord.from_line(cast_and_split(bad_line))
+
+
+def test_product_line_accepts_already_constructed_pris_dato():
+    """Passing a real date object for pris_dato (not ÅÅÅÅMMDD text) is
+    accepted unchanged - needed when reconstructing from something like a
+    database row, where date columns come back as date objects, not
+    strings."""
+    line = ProductLineRecord.model_validate(
+        {
+            "post_type": PostType.LINJE_VAREPOST,
+            "vare_mrk": VareMrk.ELNUMMER,
+            "vare_nr": "1016420",
+            "va_betg": "PFSP 1KV 2X1,5/1,5 B50",
+            "maale_enhet": MaaleEnhet.METER,
+            "pris_enhet": "MTR",
+            "pris": Decimal("0"),
+            "mengde": Decimal("10000"),
+            "pris_dato": date(2008, 12, 9),
+        }
+    )
+    assert line.pris_dato == date(2008, 12, 9)

@@ -182,8 +182,13 @@ class ProductLineRecord(Record):
 
     @field_validator("pris_dato", mode="before")
     @classmethod
-    def parse_pris_dato(cls, value: str) -> date:
-        return date.fromisoformat(value)
+    def parse_pris_dato(cls, value: str | date) -> date:
+        """Parse ÅÅÅÅMMDD text, but pass an already-constructed date
+        through unchanged (e.g. when reconstructing from a database row
+        rather than raw NELFO text)."""
+        if isinstance(value, str):
+            return date.fromisoformat(value)
+        return value
 
     def add_alternative_line(self, alternative_line: AlternativeLineRecord) -> None:
         self.alternatives.append(alternative_line)
@@ -238,9 +243,13 @@ class HeaderLineRecord(Record):
 
     @field_validator("fra_dato", "til_dato", mode="before")
     @classmethod
-    def parse_date(cls, value: str | None) -> date | None:
-        if value is not None:
+    def parse_date(cls, value: str | date | None) -> date | None:
+        """Parse ÅÅÅÅMMDD text, but pass an already-constructed date (or
+        None) through unchanged (e.g. when reconstructing from a database
+        row rather than raw NELFO text)."""
+        if isinstance(value, str):
             return date.fromisoformat(value)
+        return value
 
 
 class NelfoVareFil40(BaseModel):
