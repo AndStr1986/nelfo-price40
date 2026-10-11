@@ -51,3 +51,17 @@ def test_product_line_invalid_vare_mrk_raises():
     bad_line = VL_SAMPLE.replace(";1;1016420", ";1..;1016420", 1)
     with pytest.raises(ValidationError):
         ProductLineRecord.from_line(cast_and_split(bad_line))
+
+
+def test_product_line_invalid_maale_enhet_raises():
+    """An unrecognised maale_enhet value raises a ValidationError."""
+    bad_line = VL_SAMPLE.replace(";2;MTR", ";99;MTR", 1)
+    with pytest.raises(ValidationError):
+        ProductLineRecord.from_line(cast_and_split(bad_line))
+
+
+def test_product_line_invalid_status_raises():
+    """An unrecognised status value raises a ValidationError."""
+    bad_line = VL_SAMPLE.replace(";3;010201;R00", ";99;010201;R00", 1)
+    with pytest.raises(ValidationError):
+        ProductLineRecord.from_line(cast_and_split(bad_line))

@@ -17,8 +17,10 @@ import pytest
 from nelfo_price40 import (
     DuplicateRecord,
     NelfoVareFil40,
+    NelfoVareFilBuilder,
     NelfoVareFilParser,
 )
+from nelfo_price40.decoders import DecoderChain
 
 VH_SAMPLE = "VH;EFONELFO;4.0;NO979692900MVA;;;20081209;;NOK;;Onninen AS;Postboks 70;;1483;SKYTTA;NO"
 VL_SAMPLE = "VL;1;1016420;PFSP 1KV 2X1,5/1,5 B50;NEXANS NORWAY AS;2;MTR;METER;0;10000;20081209;3;010201;R00;;;J;500000;;"
@@ -106,3 +108,55 @@ def test_no_header_raises_value_error():
     data = VL_SAMPLE.encode()
     with pytest.raises(ValueError):
         make_parser().parse(data)
+
+
+def test_custom_delimiter_is_used():
+    """A non-default delimiter passed to the constructor is actually used
+    to split lines, instead of always assuming ';'."""
+    data = "\n".join(
+        [VH_SAMPLE.replace(";", "|"), VL_SAMPLE.replace(";", "|")]
+    ).encode()
+
+    nelfo_file = NelfoVareFilParser(delimiter="|").parse(data)
+
+    assert nelfo_file.header.s_firma_navn == "Onninen AS"
+    assert nelfo_file.products[0].vare_nr == "1016420"
+
+
+def test_custom_decoding_chain_is_used():
+    """An explicit DecoderChain instance passed to the constructor is the
+    one actually used to decode - not silently ignored in favor of a
+    fresh default instance (regression test for the earlier bug where
+    passing an instance crashed, since the default tried to call it)."""
+    chain = DecoderChain()
+    data = "\n".join([VH_SAMPLE, VL_SAMPLE]).encode()
+
+    nelfo_file = NelfoVareFilParser(decoding_chain=chain).parse(data)
+
+    assert nelfo_file.header.s_firma_navn == "Onninen AS"
+
+
+def test_custom_builder_is_used():
+    """An explicit NelfoVareFilBuilder instance passed to the constructor
+    is the one actually used - its accumulated state ends up in the
+    parse() result."""
+    builder = NelfoVareFilBuilder()
+    data = "\n".join([VH_SAMPLE, VL_SAMPLE]).encode()
+
+    nelfo_file = NelfoVareFilParser(builder=builder).parse(data)
+
+    assert nelfo_file == builder.build()
+
+
+def test_two_parsers_do_not_share_default_builder_state():
+    """Two NelfoVareFilParser() instances constructed with no explicit
+    builder each get their own NelfoVareFilBuilder - regression test for
+    the mutable-default-argument trap (a class instance used directly as
+    a default value is shared across every call site)."""
+    data = "\n".join([VH_SAMPLE, VL_SAMPLE]).encode()
+
+    first = NelfoVareFilParser().parse(data)
+    second = NelfoVareFilParser().parse(data)
+
+    assert len(first.products) == 1
+    assert len(second.products) == 1

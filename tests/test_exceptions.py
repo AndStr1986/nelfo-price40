@@ -1,13 +1,16 @@
 """Tests for the exception classes' structured data (not just their message
-text) - RecordLineParsningError, DecoderError, DuplicateRecord, StrayRecord
-all carry attributes consumers can inspect directly instead of parsing the
-formatted message string."""
+text) - RecordLineParsningError, DecoderError, DuplicateRecord, StrayRecord,
+UnknownPostTypeError, AllDecodersFailedError all carry attributes consumers
+can inspect directly instead of parsing the formatted message string."""
 
+import pytest
 from pydantic import ValidationError
 from nelfo_price40 import (
-    RecordLineParsningError,
+    AllDecodersFailedError,
     DuplicateRecord,
+    RecordLineParsningError,
     StrayRecord,
+    UnknownPostTypeError,
     ProductLineRecord,
     AlternativeLineRecord,
 )
@@ -19,10 +22,9 @@ def test_record_line_parsning_error_exposes_field_details():
     """RecordLineParsningError exposes which field failed, why, and the
     bad value - pulled from the ValidationError's own .title rather than
     being passed in separately."""
-    try:
+    with pytest.raises(ValidationError) as exc_info:
         ProductLineRecord.model_validate({"post_type": "VL", "vare_mrk": "1.."})
-    except ValidationError as e:
-        err = RecordLineParsningError(original=e, line_number=7)
+    err = RecordLineParsningError(original=exc_info.value, line_number=7)
 
     assert err.name == "ProductLineRecord"
     assert err.field == "vare_mrk"
@@ -57,3 +59,23 @@ def test_decoder_error_computes_line_and_position():
     except DecoderError as e:
         assert e.line_number == 2
         assert e.position_in_line == 3
+
+
+def test_unknown_post_type_error_exposes_post_type():
+    """UnknownPostTypeError exposes the raw, unrecognised post_type value."""
+    err = UnknownPostTypeError(
+        post_type="VI", line_number=12, line_content="VI;9;21;FRAKT;..."
+    )
+    assert err.post_type == "VI"
+    assert "12" in str(err)
+    assert "VI" in str(err)
+
+
+def test_all_decoders_failed_error_exposes_each_attempt():
+    """AllDecodersFailedError exposes the list of per-decoder DecoderError
+    attempts that led to it, not just a flattened message string."""
+    try:
+        DecoderChain().decode(b"\x81")
+    except AllDecodersFailedError as e:
+        assert len(e.exceptions) == 2
+        assert [exc.name for exc in e.exceptions] == ["utf8Decoder", "cp1252Decoder"]
