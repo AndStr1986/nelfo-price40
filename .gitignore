@@ -8,3 +8,11 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Test/tool output
+pytest.log
+.pytest_cache/
+output.txt
+
+# macOS
+.DS_Store

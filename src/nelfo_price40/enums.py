@@ -2,9 +2,9 @@ from enum import Enum
 
 
 class VareMrk(int, Enum):
-    UKJENT = (0,)
-    ELNUMMER = (1,)
-    EAN = (2,)
+    UKJENT = 0
+    ELNUMMER = 1
+    EAN = 2
     PRODUSENTENS_VARENR = 3
     NRF_NUMMER = 4
     TILLEGGSVARE = 9
@@ -34,3 +34,14 @@ class VaType(str, Enum):
 class Pristype(str, Enum):
     BRUTTO = "B"
     NETTO = "N"
+
+
+class PostType(str, Enum):
+    HODE_VAREPOST = "VH"
+    HODE_PRISTILBUD = "PH"
+    LINJE_VAREPOST = "VL"
+    LINJE_PRISTILBUD = "PL"
+    LINJE_VARE_TILLEGSINFO = "VX"
+    LINJE_PRISTILBUD_TILLEGSINFO = "PX"
+    LINJE_VARE_ALTERNATIV = "VA"
+    LINJE_PRISTILBUD_ALTERNATIV = "PA"

@@ -1,20 +1,31 @@
 [project]
 name = "nelfo-price40"
 version = "0.1.0"
-description = "Add your description here"
+description = "Parser for EFO/NELFO Vareformat 4.0 price/product files"
 readme = "README.md"
 authors = [
     { name = "Anders", email = "as@solarnorge.no" }
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "pydantic>=2.13.5",
+]
 
 [build-system]
-requires = ["uv_build>=0.11.2,<0.12.0"]
-build-backend = "uv_build"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nelfo_price40"]
 
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+log_file = "pytest.log"
+log_file_level = "INFO"
+log_file_format = "%(asctime)s - %(levelname)s - %(message)s"
