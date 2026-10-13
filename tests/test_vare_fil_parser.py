@@ -30,15 +30,17 @@ def make_parser() -> NelfoVareFilParser:
     return NelfoVareFilParser()
 
 
-def test_parses_real_large_file():
-    """A real, 2600+ line file parses end to end with a stable product count.
+def test_parses_large_file():
+    """A 2600+ line file parses end to end with a stable product count.
 
-    sample_file2.txt has two deliberately introduced defects used to
-    verify error handling elsewhere: an invalid vare_mrk on the first VL
-    (skipped), and a non-UTF-8 byte later in the file (forces the whole
-    file through the cp1252 fallback decoder, which also mangles an
-    otherwise-valid UTF-8 "²" elsewhere into "Â²" - asserted on below as a
-    known, current characteristic of the pipeline, not a bug in this test).
+    sample_file2.txt is synthetic (generated, no real supplier data) but
+    reproduces the shape of a real price file, including two deliberately
+    introduced defects used to verify error handling elsewhere: an invalid
+    vare_mrk on the first VL (skipped), and a non-UTF-8 byte later in the
+    file (forces the whole file through the cp1252 fallback decoder, which
+    also mangles an otherwise-valid UTF-8 "²" elsewhere into "Â²" -
+    asserted on below as a known, current characteristic of the pipeline,
+    not a bug in this test).
     """
     with open("tests/fixtures/sample_file2.txt", "rb") as f:
         data = f.read()
@@ -50,8 +52,8 @@ def test_parses_real_large_file():
     assert len(nelfo_file.products) == 2604
 
     first = nelfo_file.products[0]
-    assert first.vare_nr == "1001739"
-    assert first.va_betg == "PM FLEX KABEL SOLCELLE 6MMÂ²"
+    assert first.vare_nr == "2000001"
+    assert first.va_betg == "TESTKABEL SOLCELLE 6MMÂ²"
 
     last = nelfo_file.products[-1]
     assert last.vare_nr == "SP2010"
